@@ -180,7 +180,7 @@ namespace Stiletto
         internal static void SaveHeelFile(HeelInfo hi)
         {
             var configFile = $"{CONFIG_PATH}/{hi.HeelName}.txt";
-            File.WriteAllText(configFile, $"angleAnkle={hi.AngleAnkleValue.eulerAngles.x}\r\nangleLeg={hi.AngleLegValue.eulerAngles.x}\r\nheight={hi.HeightValue.y}\r\naughStuff={(hi.LockAnkle ? 1 : 0)}\r\n");
+            File.WriteAllText(configFile, $"angleAnkle={hi.AngleAnkleValue.eulerAngles.x}\r\nangleToes={hi.AngleToesValue.eulerAngles.x}\r\nangleLeg={hi.AngleLegValue.eulerAngles.x}\r\nheight={hi.HeightValue.y}\r\naughStuff={(hi.LockAnkle ? 1 : 0)}\r\n");
         }
 
         internal static void LoadHeelFile(ChaControl __instance)
@@ -198,6 +198,7 @@ namespace Stiletto
             var configFile = $"{CONFIG_PATH}/{fileName}.txt";
 
             float angleAnkle = 0f;
+            float angleToes = 0f;
             float angleLeg = 0f;
             float height = 0f;
             bool aughStuff = false;
@@ -208,6 +209,8 @@ namespace Stiletto
             }
 
             var lines = File.ReadAllLines(configFile).Select(x => x.Split('='));
+            bool angleToesFound = false;
+
             foreach (var line in lines)
             {
                 if (line.Length != 2) continue;
@@ -215,6 +218,11 @@ namespace Stiletto
                 {
                     case nameof(angleAnkle):
                         float.TryParse(line[1], out angleAnkle);
+                        break;
+
+                    case nameof(angleToes):
+                        float.TryParse(line[1], out angleToes);
+                        angleToesFound = true;
                         break;
 
                     case nameof(angleLeg):
@@ -232,8 +240,10 @@ namespace Stiletto
                 }
             }
 
+            if (!angleToesFound) angleToes = -angleAnkle;
+
             var heelInfo = __instance.gameObject.GetOrAddComponent<HeelInfo>();
-            heelInfo.Setup(fileName, __instance, height, angleAnkle, angleLeg, aughStuff);
+            heelInfo.Setup(fileName, __instance, height, angleAnkle, angleToes, angleLeg, aughStuff);
             heightBuffer = height.ToString("F3");
         }
 
@@ -441,21 +451,40 @@ namespace Stiletto
             GUILayout.Label(selected.HeelName);
             GUILayout.EndHorizontal();
 
+
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Ankle + Toes:");
+            GUILayout.Label("Ankle:");
             if (GUILayout.RepeatButton("-", _width20))
             {
                 var newAngleAnkle = selected.AngleAnkleValue.eulerAngles.x - 0.1f;
-                selected.UpdateValues(selected.HeightValue.y, newAngleAnkle, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
+                selected.UpdateValues(selected.HeightValue.y, newAngleAnkle, selected.AngleToesValue.eulerAngles.x, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
                 GUI.changed = false;
             }
             var angleA = GUILayout.TextField(selected.AngleAnkleValue.eulerAngles.x.ToString("F0"), _width40);
             if (GUILayout.RepeatButton("+", _width20))
             {
                 var newAngleAnkle = selected.AngleAnkleValue.eulerAngles.x + 0.1f;
-                selected.UpdateValues(selected.HeightValue.y, newAngleAnkle, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
+                selected.UpdateValues(selected.HeightValue.y, newAngleAnkle, selected.AngleToesValue.eulerAngles.x, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
                 GUI.changed = false;
             }
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Toes:");
+            if (GUILayout.RepeatButton("-", _width20))
+            {
+                var newAngleToes = selected.AngleToesValue.eulerAngles.x - 0.1f;
+                selected.UpdateValues(selected.HeightValue.y, selected.AngleAnkleValue.eulerAngles.x, newAngleToes, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
+                GUI.changed = false;
+            }
+            var angleT = GUILayout.TextField(selected.AngleToesValue.eulerAngles.x.ToString("F0"), _width40);
+            if (GUILayout.RepeatButton("+", _width20))
+            {
+                var newAngleToes = selected.AngleToesValue.eulerAngles.x + 0.1f;
+                selected.UpdateValues(selected.HeightValue.y, selected.AngleAnkleValue.eulerAngles.x, newAngleToes, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
+                GUI.changed = false;
+            }
+
+            GUILayout.EndHorizontal();
 
             GUILayout.EndHorizontal();
 
@@ -469,14 +498,14 @@ namespace Stiletto
             if (GUILayout.RepeatButton("-", _width20))
             {
                 var newAngleLeg = selected.AngleLegValue.eulerAngles.x - 0.1f;
-                selected.UpdateValues(selected.HeightValue.y, selected.AngleAnkleValue.eulerAngles.x, newAngleLeg, selected.LockAnkle);
+                selected.UpdateValues(selected.HeightValue.y, selected.AngleAnkleValue.eulerAngles.x, selected.AngleToesValue.eulerAngles.x, newAngleLeg, selected.LockAnkle);
                 GUI.changed = false;
             }
             var angleLeg = GUILayout.TextField(selected.AngleLegValue.eulerAngles.x.ToString("F0"), _width40);
             if (GUILayout.RepeatButton("+", _width20))
             {
                 var newAngleLeg = selected.AngleLegValue.eulerAngles.x + 0.1f;
-                selected.UpdateValues(selected.HeightValue.y, selected.AngleAnkleValue.eulerAngles.x, newAngleLeg, selected.LockAnkle);
+                selected.UpdateValues(selected.HeightValue.y, selected.AngleAnkleValue.eulerAngles.x, selected.AngleToesValue.eulerAngles.x, newAngleLeg, selected.LockAnkle);
                 GUI.changed = false;
             }
             GUILayout.EndHorizontal();
@@ -486,7 +515,7 @@ namespace Stiletto
             if (GUILayout.RepeatButton("-", _width20))
             {
                 var newHeight = selected.HeightValue.y - 0.001f;
-                selected.UpdateValues(newHeight, selected.AngleAnkleValue.eulerAngles.x, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
+                selected.UpdateValues(newHeight, selected.AngleAnkleValue.eulerAngles.x, selected.AngleToesValue.eulerAngles.x, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
                 heightBuffer = selected.HeightValue.y.ToString("F3");
                 GUI.changed = false;
             }
@@ -494,7 +523,7 @@ namespace Stiletto
             if (GUILayout.RepeatButton("+", _width20))
             {
                 var newHeight = selected.HeightValue.y + 0.001f;
-                selected.UpdateValues(newHeight, selected.AngleAnkleValue.eulerAngles.x, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
+                selected.UpdateValues(newHeight, selected.AngleAnkleValue.eulerAngles.x, selected.AngleToesValue.eulerAngles.x, selected.AngleLegValue.eulerAngles.x, selected.LockAnkle);
                 heightBuffer = selected.HeightValue.y.ToString("F3");
                 GUI.changed = false;
             }
@@ -503,15 +532,17 @@ namespace Stiletto
             if (GUI.changed)
             {
                 if (angleA.Length == 0) angleA = "0";
+                if (angleT.Length == 0) angleT = "0";
                 if (angleLeg.Length == 0) angleLeg = "0";
                 if (heightBuffer.Length == 0) heightBuffer = "0";
                 if (
                     float.TryParse(angleA, out float f_angleA) &&
+                    float.TryParse(angleT, out float f_angleT) &&
                     float.TryParse(angleLeg, out float f_angleLeg) &&
                     float.TryParse(heightBuffer, out float f_height)
                 )
                 {
-                    selected.UpdateValues(f_height, f_angleA, f_angleLeg, b_aughStuff);
+                    selected.UpdateValues(f_height, f_angleA, f_angleT, f_angleLeg, b_aughStuff);
                 }
             }
 

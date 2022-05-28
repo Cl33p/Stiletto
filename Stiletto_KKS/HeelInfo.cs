@@ -106,22 +106,22 @@ namespace Stiletto
 
         #endregion Unity
 
-        internal void UpdateValues(float height, float angleAnkle, float angleLeg, bool aughStuff)
+        internal void UpdateValues(float height, float angleAnkle, float angleToes, float angleLeg, bool aughStuff)
         {
             HeightValue = new Vector3(0, height, 0);
             AngleAnkleValue = Quaternion.Euler(angleAnkle, 0f, 0f);
-            AngleToesValue = Quaternion.Euler(-angleAnkle, 0f, 0f);
+            AngleToesValue = Quaternion.Euler(angleToes, 0f, 0f);
             AngleLegValue = Quaternion.Euler(angleLeg, 0f, 0f);
             LockAnkle = aughStuff;
         }
 
-        internal void Setup(string heelName, ChaControl chaControl, float height, float angleAnkle, float angleLeg, bool aughStuff)
+        internal void Setup(string heelName, ChaControl chaControl, float height, float angleAnkle, float angleToes, float angleLeg, bool aughStuff)
         {
             AnimBody = chaControl.animBody;
             HeelName = heelName;
             ChaControl = chaControl;
             _body = ChaControl.objBodyBone.transform.parent;
-            UpdateValues(height, angleAnkle, angleLeg, aughStuff);
+            UpdateValues(height, angleAnkle, angleToes, angleLeg, aughStuff);
 
             var waist = _body.Find("cf_j_root/cf_n_height/cf_j_hips/cf_j_waist01/cf_j_waist02");
             if (waist == null) return;
